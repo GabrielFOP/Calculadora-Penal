@@ -7,13 +7,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -47,7 +50,18 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.*
-
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 
 
 // Model classes correspondentes ao backend
@@ -112,13 +126,28 @@ fun WhatsAppNewChatButton() {
             intent.data = Uri.parse(url)
             context.startActivity(intent)
         },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(40.dp),
         containerColor = Color(0xFF25D366),
         contentColor = Color.White
     ) {
-        Icon(Icons.Filled.Phone, contentDescription = "New chat")
+        Canvas(modifier = Modifier.size(20.dp)) {
+            // Encontra o centro do Canvas
+            val centro = Offset(size.width / 2, size.height / 2)
+            // Calcula o raio com base no menor lado para garantir que o círculo caiba
+            val raio = size.minDimension / 2f
+            val espessura = 4.dp
+            // Desenha o círculo com estilo Stroke para que o centro fique transparente
+            drawCircle(
+                color = Color.White,
+                radius = raio - espessura.toPx() / 2,
+                center = centro,
+                style = Stroke(width = espessura.toPx())
+            )
+        }
     }
-}
+        Icon(Icons.Filled.Phone, tint = Color.White, contentDescription = "New chat")
+    }
+
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -234,7 +263,7 @@ fun HomeScreen(onCalculateClick: () -> Unit) {
                     )
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(48.dp))
             Button(
                 onClick = onCalculateClick,
                 modifier = Modifier.fillMaxWidth(),
@@ -284,7 +313,9 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
             .padding(12.dp), color = Color.White
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text("Tempo de pena total")
+            Text("Calculadora Penal",color = Color.Black, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontSize = 32.0.sp)
+            Spacer(Modifier.height(12.dp))
+            Text("Tempo de pena total", fontSize = 18.0.sp)
             Row {
                 OutlinedTextField(
                     value = years,
@@ -317,14 +348,15 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
 
             Spacer(Modifier.height(10.dp))
 
-            // Aqui: colocar as seções uma abaixo da outra
+
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .padding(4.dp)
                 ) {
-                    Text("Remição")
+                    Text("Remição", textDecoration = TextDecoration.Underline, fontSize = 18.0.sp)
+                    Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         value = diasTrabalhados,
                         onValueChange = { diasTrabalhados = it.filter { ch -> ch.isDigit() } },
@@ -345,12 +377,28 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
                     )
                 }
 
+                Row(
+                    modifier = Modifier
+                        .height(360.dp).padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    VerticalDivider(
+                        modifier = Modifier
+                            .fillMaxHeight() // Aplica a altura máxima disponível do Row
+                            .width(8.dp),    // Define a espessura do divisor
+                        color = Color(215, 146, 77),// Aplica a cor desejada
+                        thickness = 4.dp
+                    )
+                }
+
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .padding(4.dp)
                 ) {
-                    Text("Dados da Pena")
+                    Text("Dados da Pena", textDecoration = TextDecoration.Underline, fontSize = 18.0.sp)
+                    Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         value = dataInicio,
                         onValueChange = { dataInicio = it },
@@ -384,7 +432,7 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
                 }
             }
 
-            // Botão e resultados abaixo do Row
+
             Spacer(Modifier.height(8.dp))
             Button(
                 onClick = {
