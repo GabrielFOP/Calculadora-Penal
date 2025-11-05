@@ -117,4 +117,4 @@ Além disso, o cálculo considera:
     .baseUrl("http://SEU_IP_LOCAL:3000/")
     ```
 4. Ajuste o IP no AndroidManifest
-5. Eecute o App
+5. Execute o App
