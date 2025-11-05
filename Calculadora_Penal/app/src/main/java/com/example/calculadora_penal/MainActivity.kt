@@ -1,11 +1,15 @@
 package com.example.calculadora_penal
 
 
+import android.annotation.SuppressLint
+import android.app.DatePickerDialog
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -18,6 +22,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
@@ -31,7 +36,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -50,21 +54,34 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.*
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.MailOutline
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
+import java.util.Calendar
 
 
-// Model classes correspondentes ao backend
+
 data class CalcRequest(
     val totalYears: Int,
     val totalMonths: Int,
@@ -84,18 +101,19 @@ data class CalcResult(
 )
 
 interface ApiService {
-    @POST("/calculate")
+    @POST("calculate")
     suspend fun calculate(@Body req: CalcRequest): CalcResult
 }
 
 class MainActivity : ComponentActivity() {
     private val retrofit = Retrofit.Builder()
-        .baseUrl("http://10.0.2.2:3000") // usar 10.0.2.2 para emulador; em device real, IP do server
+        .baseUrl("http://192.168.15.42:3000/") // usar 10.0.2.2 para emulador; em device real, IP do server
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
     private val api = retrofit.create(ApiService::class.java)
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -104,6 +122,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PenalApp(api: ApiService) {
     var screen by remember { mutableStateOf(1) }
@@ -126,27 +145,21 @@ fun WhatsAppNewChatButton() {
             intent.data = Uri.parse(url)
             context.startActivity(intent)
         },
-        shape = RoundedCornerShape(40.dp),
+        shape = CircleShape,
         containerColor = Color(0xFF25D366),
-        contentColor = Color.White
+        contentColor = Color.White,
+        modifier = Modifier.size(56.dp)
     ) {
-        Canvas(modifier = Modifier.size(20.dp)) {
-            // Encontra o centro do Canvas
-            val centro = Offset(size.width / 2, size.height / 2)
-            // Calcula o raio com base no menor lado para garantir que o círculo caiba
-            val raio = size.minDimension / 2f
-            val espessura = 4.dp
-            // Desenha o círculo com estilo Stroke para que o centro fique transparente
-            drawCircle(
-                color = Color.White,
-                radius = raio - espessura.toPx() / 2,
-                center = centro,
-                style = Stroke(width = espessura.toPx())
-            )
-        }
+        Icon(
+            imageVector = Icons.Default.Phone,
+            contentDescription = "Abrir WhatsApp",
+            modifier = Modifier.size(28.dp),
+            tint = Color.White
+        )
     }
-        Icon(Icons.Filled.Phone, tint = Color.White, contentDescription = "New chat")
     }
+
+
 
 
 
@@ -278,6 +291,145 @@ fun HomeScreen(onCalculateClick: () -> Unit) {
 }
 
 @Composable
+fun ResultadosView(result:  CalcResult?) {
+    val focusManager = LocalFocusManager.current
+
+    var nome by remember { mutableStateOf("") }
+    var telefone by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var processo by remember { mutableStateOf("") }
+
+    result?.let { res ->
+        Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+
+            // Card de Resultados
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp),
+                elevation = 4.dp
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Progressões e Benefícios", style = MaterialTheme.typography.h6)
+                    Spacer(Modifier.height(8.dp))
+                    res.results?.forEach { item ->
+                        Divider()
+                        Spacer(Modifier.height(8.dp))
+                        Text(item["title"] ?: "", color = Color(0xFF1A4BA8))
+                        Text("Data prevista: ${item["date"] ?: ""}")
+                        Text(item["percent"] ?: "", color = Color(0xFF4B6CB7))
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    Divider()
+                    Spacer(Modifier.height(8.dp))
+                    Text("Liberdade Condicional", color = Color(0xFF1A4BA8))
+                    Text(
+                        res.liberdadeCondicional ?: "",
+                        color = if ((res.liberdadeCondicional ?: "").contains("Não há"))
+                            Color.Red else Color.Black
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Text("Envie o seu resultado para um de nossos advogados:", fontWeight = FontWeight.Bold,  fontSize = 18.0.sp)
+            Spacer(Modifier.height(16.dp))
+
+            // Formulário
+            OutlinedTextField(
+                value = nome,
+                onValueChange = { nome = it },
+                label = {
+                    Text(buildAnnotatedString {
+                        append("Nome Completo")
+                        withStyle(SpanStyle(color = Color.Red)) { append(" *") }
+                    })
+                },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
+                singleLine = true
+            )
+
+            Spacer(Modifier.height(5.dp))
+
+            OutlinedTextField(
+                value = telefone,
+                onValueChange = { telefone = it },
+                label = {
+                    Text(buildAnnotatedString {
+                        append("Número (WhatsApp)")
+                        withStyle(SpanStyle(color = Color.Red)) { append(" *") }
+                    })
+                },
+                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Phone,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
+                singleLine = true
+            )
+
+            Spacer(Modifier.height(5.dp))
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("E-mail") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
+                singleLine = true
+            )
+
+            Spacer(Modifier.height(5.dp))
+
+            OutlinedTextField(
+                value = processo,
+                onValueChange = { processo = it },
+                label = { Text("Número do Processo") },
+                placeholder = { Text("NNNNNNN-DD.AAAA.J.TR.OOOO") },
+                leadingIcon = { Icon(Icons.Default.MailOutline, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done
+                ),
+                singleLine = true
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            Button(
+                onClick = {
+
+                },
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text("Enviar")
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
 fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     var years by remember { mutableStateOf("0") }
@@ -287,7 +439,7 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
     var diasTrabalhados by remember { mutableStateOf("0") }
     var horasEstudadas by remember { mutableStateOf("0") }
 
-    var dataInicio by remember { mutableStateOf("") } // DD/MM/aaaa
+//    var dataInicio by remember { mutableStateOf("") }
     val crimeOptions = listOf(
         "Comum",
         "Hediondo",
@@ -306,6 +458,24 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
     var loading by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<CalcResult?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+
+    var dataInicioDisplay by remember { mutableStateOf("") }  // Mostrado na tela (DD/MM/AAAA)
+    var dataInicioISO by remember { mutableStateOf("") }       // Enviado ao backend (YYYY-MM-DD)
+
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            // Formata para exibição e envio
+            dataInicioDisplay = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
+            dataInicioISO = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
     Surface(
         modifier = Modifier
@@ -385,9 +555,9 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
                 ) {
                     VerticalDivider(
                         modifier = Modifier
-                            .fillMaxHeight() // Aplica a altura máxima disponível do Row
-                            .width(8.dp),    // Define a espessura do divisor
-                        color = Color(215, 146, 77),// Aplica a cor desejada
+                            .fillMaxHeight()
+                            .width(8.dp),
+                        color = Color(215, 146, 77),
                         thickness = 4.dp
                     )
                 }
@@ -398,11 +568,20 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
                         .padding(4.dp)
                 ) {
                     Text("Dados da Pena", textDecoration = TextDecoration.Underline, fontSize = 18.0.sp)
+
                     Spacer(Modifier.height(10.dp))
+
                     OutlinedTextField(
-                        value = dataInicio,
-                        onValueChange = { dataInicio = it },
-                        label = { Text("Data de início (DD/MM/AAAA)") },
+                        value = dataInicioDisplay,
+                        onValueChange = {},
+                        label = { Text("Data de Início") },
+                        placeholder = { Text("Selecione a data") },
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(onClick = { datePickerDialog.show() }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Selecionar data")
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(4.dp)
@@ -436,10 +615,9 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
             Spacer(Modifier.height(8.dp))
             Button(
                 onClick = {
-                    // validações simples
                     error = null
                     result = null
-                    if (dataInicio.isBlank()) {
+                    if (dataInicioISO.isBlank()) {
                         error = "Informe a data de início"
                         return@Button
                     }
@@ -452,7 +630,7 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
                                 totalDays = days.toIntOrNull() ?: 0,
                                 diasTrabalhados = diasTrabalhados.toIntOrNull() ?: 0,
                                 horasEstudadas = horasEstudadas.toIntOrNull() ?: 0,
-                                dataInicio = dataInicio,
+                                dataInicio = dataInicioISO,
                                 crimeType = selectedCrime,
                                 agravantes = mapOf(
                                     "reincidente" to reincidente,
@@ -487,48 +665,47 @@ fun CalculatorScreen(api: ApiService, onBack: () -> Unit) {
             Spacer(Modifier.height(12.dp))
 
             // Resultados
-            result?.let { res ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(4.dp), elevation = 4.dp
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("Progressões e Benefícios", style = MaterialTheme.typography.h6)
-                        Spacer(Modifier.height(8.dp))
-                        res.results?.forEach { item ->
-                            Divider()
-                            Spacer(Modifier.height(8.dp))
-                            Text(item["title"] ?: "", color = Color(0xFF1A4BA8))
-                            Text("Data prevista: ${item["date"] ?: ""}")
-                            Text(item["percent"] ?: "", color = Color(0xFF4B6CB7))
-                            Spacer(Modifier.height(8.dp))
-                        }
-                        Divider()
-                        Spacer(Modifier.height(8.dp))
-                        Text("Liberdade Condicional", color = Color(0xFF1A4BA8))
-                        Text(
-                            res.liberdadeCondicional ?: "",
-                            color = if ((res.liberdadeCondicional ?: "").contains("Não há"))
-                                Color.Red else Color.Black
-                        )
-                    }
-                }
-            }
+            ResultadosView(result = result)
 
             Spacer(Modifier.weight(1f))
 
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(vertical = 16.dp, horizontal = 12.dp)
             ) {
-                Text("Entre em contato com um de nossos advogados")
-                WhatsAppNewChatButton()
+                Divider(thickness = 1.dp, color = Color(215, 146, 77))
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    "Quero falar com um advogado",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF1A4BA8)
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Atendimento rápido via WhatsApp",
+                        fontSize = 15.sp,
+                        color = Color.Gray
+                    )
+
+                    WhatsAppNewChatButton()
+                }
+
+                Spacer(Modifier.height(8.dp))
+                Divider(thickness = 1.dp, color = Color(215, 146, 77))
             }
         }
+        }
     }
-}
+
 
 
