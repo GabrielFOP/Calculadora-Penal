@@ -125,7 +125,16 @@ app.post("/calculate", (req, res) => {
     if (effectiveDays < 730) {
       condMsg =
         "Não há direito ao livramento condicional (pena inferior a 2 anos).";
-    } else {
+    }
+    else if(crimeType == "Hediondo com resultado de morte"){
+        condMsg = 
+        "Não há direito ao livramento condicional (crime hediondo com resultado morte)"
+    }
+    else if(reincidente && crimeType == "Hediondo" || "Organização criminosa (crime hediondo)" || "Tráfico de drogas"){
+        condMsg = 
+        "Não há direito ao livramento condicional (reincidente em crime hediondo)";
+    }
+    else {
       const condPercent = reincidente ? 50 : 33;
       const condDate = dateForPercent(condPercent);
       condMsg = `Data prevista: ${formatDateBR(
