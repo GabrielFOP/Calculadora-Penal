@@ -126,11 +126,11 @@ app.post("/calculate", (req, res) => {
       condMsg =
         "Não há direito ao livramento condicional (pena inferior a 2 anos).";
     }
-    else if(crimeType == "Hediondo com resultado de morte"){
+    else if(crimeType === "Hediondo com resultado de morte"){
         condMsg = 
         "Não há direito ao livramento condicional (crime hediondo com resultado morte)"
     }
-    else if(reincidente && crimeType == "Hediondo" || "Organização criminosa (crime hediondo)" || "Tráfico de drogas"){
+    else if(reincidente && crimeType === ("Hediondo" || "Organização criminosa (crime hediondo)" || "Tráfico de drogas")){
         condMsg = 
         "Não há direito ao livramento condicional (reincidente em crime hediondo)";
     }

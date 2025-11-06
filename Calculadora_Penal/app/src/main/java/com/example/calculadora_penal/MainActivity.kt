@@ -107,7 +107,7 @@ interface ApiService {
 
 class MainActivity : ComponentActivity() {
     private val retrofit = Retrofit.Builder()
-        .baseUrl("http://192.168.15.42:3000/") // usar 10.0.2.2 para emulador; em device real, IP do server
+        .baseUrl("http://10.0.2.2:3000/") // usar 10.0.2.2 para emulador; em device real, IP do server
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
